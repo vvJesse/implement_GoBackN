@@ -22,6 +22,7 @@ public class UdtChannel {
     private final double MAX_BANDWIDTH = 10;
 
     private final int receiverPort = 12345;
+    private final int senderPort = 12346;
     enum UdtEndType {UDT_SENDER, UDT_RECEIVER};
 
     private InetAddress receiverIpAddress;
@@ -106,7 +107,7 @@ public class UdtChannel {
         try {
             senderSocket = new DatagramSocket();
             if (udtEndType == UdtEndType.UDT_SENDER) {
-                receiverSocket = new DatagramSocket(12346);
+                receiverSocket = new DatagramSocket(senderPort);
             }
             else {
                 receiverSocket = new DatagramSocket(receiverPort);
@@ -191,12 +192,12 @@ public class UdtChannel {
     }
 
     private void udpSend(byte[] packet){
-        int pip;
+        int peerPort;
         if(udtEndType == UdtEndType.UDT_SENDER)
-            pip = receiverPort;
+            peerPort = receiverPort;
         else
-            pip = 12346;
-        DatagramPacket dataPacket = new DatagramPacket(packet, packet.length, receiverIpAddress, pip);
+            peerPort = senderPort;
+        DatagramPacket dataPacket = new DatagramPacket(packet, packet.length, receiverIpAddress, peerPort);
         try {
             senderSocket.send(dataPacket);
         } catch (IOException e) {
@@ -206,19 +207,21 @@ public class UdtChannel {
 
     //返回值：是否发送成功
     public void udtSend(byte [] data, int length) {
-        byte[] packet = new byte[length];
-        System.arraycopy(data, 0, packet,0, length);
-        while(true) {
-            if (packetQueue.size() > QUEUE_SIZE) {
-                try {
-                    Thread.sleep(3);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+        byte[] packet = new byte[data.length];
+        System.arraycopy(data, 0, packet,0, data.length);
+        synchronized (packetQueue) {
+            while (true) {
+                if (packetQueue.size() > QUEUE_SIZE) {
+                    try {
+                        Thread.sleep(3);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    continue;
                 }
-                continue;
+                packetQueue.add(packet);
+                break;
             }
-            packetQueue.add(packet);
-            break;
         }
     }
 

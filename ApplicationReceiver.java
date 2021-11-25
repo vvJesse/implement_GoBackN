@@ -18,29 +18,18 @@ public class ApplicationReceiver {
 
         while (true) {
             int len = rdtProto.rdtRecv(data);
-            //int len = udtChannel.udtRecv(data);
             int id = data[1] * 128 + data[0];
             System.out.println("Receive a packet, id = " + id + ", size = " + len);
-            byte[] packet = new byte[3];
-            packet[0] = data[0];
-            packet[1] = packet[1];
-            packet[2] = -1;
-            rdtProto.rdtSend(packet, 3);
-            //udtChannel.udtSend(packet, 3);
-            System.out.println("send a ack");
         }
     }
 
     public static void main(String[] args) {
-//        udtChannel = new UdtChannel(UdtChannel.UdtEndType.UDT_RECEIVER);
-//        udtChannel.open();
         rdtProto = new RdtProto(UdtChannel.UdtEndType.UDT_RECEIVER);
         rdtProto.openChannel(LOCAL_IP);
 
         recvData();
 
         rdtProto.closeChannel();
-//        udtChannel.close();
         System.out.println("Finished!");
     }
 }

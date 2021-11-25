@@ -36,26 +36,41 @@ public class ApplicationSender {
         }
 
         setDataBlockSizeRange(500, 1000);
-        for (int i = 0; i < 1000; i++) {
+        int packet_num = 100;
+        long beginTime = System.currentTimeMillis();
+        for (int i = 1; i < packet_num; i++) {
             //生成报文编号
             data[0] = (byte) (i % 128);
             data[1] = (byte) (i / 128);
             int dataSize = genDataBlockSize();
-//            udtChannel.udtSend(data, dataSize);
+            rdtProto.make_pkt(data, dataSize);
             rdtProto.rdtSend(data, dataSize);
             System.out.println("Send a packet, id = " + i + ", size = " + dataSize);
         }
+
+        while (rdtProto.base < packet_num){
+            // 全部发送后，也不一定全部收到，可能还要经过重传才能接收到。
+            // 在这里，必须等待，否则就会执行后面的closechannel，一旦关闭了通道，
+            // 后面的重传就不可能收到了。
+            System.out.println(rdtProto.base);
+            try {
+                Thread.sleep(100);
+            }catch (Exception e){
+                e.printStackTrace();
+            }
+        }
+
+        long endTime = System.currentTimeMillis();
+        System.out.println(endTime-beginTime);
+
     }
 
     public static void main(String[] args) {
-//        udtChannel = new UdtChannel(UdtChannel.UdtEndType.UDT_SENDER);
-//        udtChannel.open();
         rdtProto = new RdtProto(UdtChannel.UdtEndType.UDT_SENDER);
         rdtProto.openChannel(LOCAL_IP);
 
         sendData();
 
-//        udtChannel.close();
         rdtProto.closeChannel();
         System.out.println("Finished!");
     }
